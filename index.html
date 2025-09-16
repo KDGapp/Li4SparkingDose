@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat&family=Lora&family=Orbitron:wght@400;700&family=Playfair+Display&family=Roboto&display=swap" rel="stylesheet">
+    <!-- Load Babel to transpile JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
       /* Custom scrollbar with the new neon green theme */
       ::-webkit-scrollbar {
@@ -30,20 +32,1214 @@
       h1, h2, h3, h4, h5, h6, button, .font-orbitron {
         font-family: 'Orbitron', sans-serif;
       }
+      .range-thumb::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #39ff14;
+        cursor: pointer;
+        border-radius: 2px;
+        box-shadow: 0 0 5px #39ff14;
+      }
+      .range-thumb::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: #39ff14;
+        cursor: pointer;
+        border-radius: 2px;
+        border: none;
+        box-shadow: 0 0 5px #39ff14;
+      }
+       @keyframes spin-slow {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes spin-medium {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(-360deg); }
+        }
+        @keyframes spin-fast {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow { animation: spin-slow 4s linear infinite; }
+        .animate-spin-medium { animation: spin-medium 2s linear infinite; }
+        .animate-spin-fast { animation: spin-fast 1s linear infinite; }
+        .animate-fade-in {
+            animation: fadeInAnimation ease 0.5s;
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+        }
+        @keyframes fadeInAnimation {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
-    "react/": "https://esm.sh/react@18.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.17.0"
+    "react": "https://esm.sh/react@18.2.0?jsx=automatic",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "@google/genai": "https://esm.sh/@google/genai"
   }
 }
 </script>
 </head>
   <body class="bg-gray-900">
     <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
+    <script type="text/babel" data-type="module">
+// --- Start of combined script ---
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom/client';
+import { GoogleGenAI, Type } from "@google/genai";
+
+// --- From lib/i18n.ts ---
+const englishTranslations = {
+  apiKeyError: 'Please enter your Google AI API Key to generate posts.',
+  topicError: 'Please enter a topic.',
+  unexpectedError: 'An unexpected error occurred. Please try again.',
+  systemError: 'SYSTEM ERROR:',
+  generatingPosts: 'ANALYZING... GENERATING POSTS...',
+  appDescription: 'Enter a topic and our AI will generate profound, poetic, and thought-provoking statements, designed to inspire reflection and resonate deeply with your audience.',
+  appSlogan: 'Sparking Contemplation...',
+  topicPlaceholder: "e.g., 'AI consciousness' or 'Cyberpunk fashion'",
+  processing: 'Processing...',
+  generate: 'Generate',
+  styleDeepMetaphor: 'Deep Metaphor',
+  styleSimpleElegant: 'Simple & Elegant',
+  styleSimpleTruth: 'Simple Truth',
+  styleProvocativeParable: 'Provocative Parable',
+  styleInsightfulQuestion: 'Insightful Question',
+  selectWritingStyle: 'Select writing style',
+  copied: 'COPIED',
+  copy: 'COPY',
+  createImage: 'CREATE IMAGE',
+  copyFail: 'Failed to copy text to clipboard.',
+  shareThisAI: 'SHARE THIS AI',
+  shareOnTwitter: 'Share on Twitter',
+  shareOnFacebook: 'Share on Facebook',
+  shareOnWhatsApp: 'Share on WhatsApp',
+  visitTikTok: 'Visit TikTok',
+  apiKeyLabel: 'Enter Your API Key to Activate the AI',
+  apiKeyPlaceholder: 'Enter your Google AI API Key',
+  getApiKey: 'Get API Key',
+  hideApiKey: 'Hide API Key',
+  showApiKey: 'Show API Key',
+  imageEditorTitle: 'IMAGE EDITOR_',
+  background: 'Background',
+  uploadImage: 'Upload Image',
+  generateWithAI: 'Generate with AI',
+  generating: 'Generating...',
+  apiKeyTooltip: 'Please enter your API key to use AI generation.',
+  generateTooltip: 'Generate a background image using AI',
+  aspectRatio: 'Aspect Ratio',
+  aspectSquare: 'Square (1:1)',
+  aspectPortrait: 'Portrait (4:5)',
+  aspectLandscape: 'Landscape (16:9)',
+  aspectStory: 'Story (9:16)',
+  opacity: 'Opacity',
+  blur: 'Blur',
+  bannerTemplates: 'Banner Templates',
+  text: 'Text',
+  fontFamily: 'Font Family',
+  color: 'Color',
+  fontSize: 'Font Size',
+  vPosition: 'V-Position',
+  alignment: 'Alignment',
+  outline: 'Outline',
+  width: 'Width',
+  download: 'Download',
+  share: 'Share',
+  sharing: 'Sharing...',
+  shareFailed: 'Failed',
+  shareFailMessage: 'Sharing failed. Your browser may not be supported.',
+  uploadPlaceholderTitle: 'UPLOAD OR GENERATE IMAGE',
+  uploadPlaceholderSubtitle: 'Click to upload or use the AI generator',
+  imageGenError: 'An unknown error occurred during image generation.',
+  templateNeon: 'Neon Glow',
+  templateElegant: 'Elegant',
+  templateBold: 'Bold News',
+};
+
+const translations = {
+  English: englishTranslations,
+  Indonesian: {
+    apiKeyError: 'Silakan masukkan Kunci API Google AI Anda untuk membuat postingan.',
+    topicError: 'Silakan masukkan topik.',
+    unexpectedError: 'Terjadi kesalahan tak terduga. Silakan coba lagi.',
+    systemError: 'KESALAHAN SISTEM:',
+    generatingPosts: 'MENGANALISIS... MEMBUAT POSTINGAN...',
+    appDescription: 'Masukkan topik dan AI kami akan menghasilkan pernyataan yang mendalam, puitis, dan menggugah pikiran, yang dirancang untuk menginspirasi refleksi dan beresonansi secara mendalam dengan audiens Anda.',
+    appSlogan: 'Memicu Kontemplasi...',
+    topicPlaceholder: "contoh, 'Kesadaran AI' atau 'Mode Cyberpunk'",
+    processing: 'Memproses...',
+    generate: 'Buat',
+    styleDeepMetaphor: 'Metafora Mendalam',
+    styleSimpleElegant: 'Sederhana & Elegan',
+    styleSimpleTruth: 'Kebenaran Sederhana',
+    styleProvocativeParable: 'Perumpamaan Provokatif',
+    styleInsightfulQuestion: 'Pertanyaan Berwawasan',
+    selectWritingStyle: 'Pilih gaya penulisan',
+    copied: 'TERSALIN',
+    copy: 'SALIN',
+    createImage: 'BUAT GAMBAR',
+    copyFail: 'Gagal menyalin teks ke papan klip.',
+    shareThisAI: 'BAGIKAN AI INI',
+    shareOnTwitter: 'Bagikan di Twitter',
+    shareOnFacebook: 'Bagikan di Facebook',
+    shareOnWhatsApp: 'Bagikan di WhatsApp',
+    visitTikTok: 'Kunjungi TikTok',
+    apiKeyLabel: 'Masukkan Kunci API Anda untuk Mengaktifkan AI',
+    apiKeyPlaceholder: 'Masukkan Kunci API Google AI Anda',
+    getApiKey: 'Dapatkan Kunci API',
+    hideApiKey: 'Sembunyikan Kunci API',
+    showApiKey: 'Tampilkan Kunci API',
+    imageEditorTitle: 'EDITOR GAMBAR_',
+    background: 'Latar Belakang',
+    uploadImage: 'Unggah Gambar',
+    generateWithAI: 'Buat dengan AI',
+    generating: 'Membuat...',
+    apiKeyTooltip: 'Silakan masukkan kunci API Anda untuk menggunakan pembuatan AI.',
+    generateTooltip: 'Buat gambar latar belakang menggunakan AI',
+    aspectRatio: 'Rasio Aspek',
+    aspectSquare: 'Persegi (1:1)',
+    aspectPortrait: 'Potret (4:5)',
+    aspectLandscape: 'Lanskap (16:9)',
+    aspectStory: 'Cerita (9:16)',
+    opacity: 'Opasitas',
+    blur: 'Buram',
+    bannerTemplates: 'Template Banner',
+    text: 'Teks',
+    fontFamily: 'Jenis Huruf',
+    color: 'Warna',
+    fontSize: 'Ukuran Huruf',
+    vPosition: 'Posisi-V',
+    alignment: 'Perataan',
+    outline: 'Garis Luar',
+    width: 'Lebar',
+    download: 'Unduh',
+    share: 'Bagikan',
+    sharing: 'Membagikan...',
+    shareFailed: 'Gagal',
+    shareFailMessage: 'Gagal berbagi. Browser Anda mungkin tidak mendukung.',
+    uploadPlaceholderTitle: 'UNGGAH ATAU BUAT GAMBAR',
+    uploadPlaceholderSubtitle: 'Klik untuk mengunggah atau gunakan generator AI',
+    imageGenError: 'Terjadi kesalahan yang tidak diketahui saat pembuatan gambar.',
+    templateNeon: 'Cahaya Neon',
+    templateElegant: 'Elegan',
+    templateBold: 'Berita Tebal',
+  },
+};
+
+const defaultLang = 'English';
+const useTranslations = (lang) => {
+    return (key) => {
+        const langTranslations = translations[lang] || translations[defaultLang];
+        return langTranslations?.[key] || key;
+    };
+};
+
+// --- From services/geminiService.ts ---
+const postSchema = {
+  type: Type.OBJECT,
+  properties: {
+    platform: {
+      type: Type.STRING,
+      description: "The social media platform (e.g., 'Instagram', 'Twitter', 'Facebook', 'WhatsApp', 'TikTok').",
+      enum: ['Instagram', 'Twitter', 'Facebook', 'WhatsApp', 'TikTok'],
+    },
+    content: {
+      type: Type.STRING,
+      description: "The main text content of the social media post. Should be engaging and relevant to the topic.",
+    },
+    hashtags: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.STRING,
+      },
+      description: "An array of relevant hashtags, without the '#' symbol.",
+    },
+  },
+  required: ['platform', 'content', 'hashtags'],
+};
+
+const getStyleInstruction = (style) => {
+  switch (style) {
+    case 'simple_elegant':
+      return "The content for each post should be a simple and elegant statement. The tone should be graceful, concise, and beautiful, using clear language that is easy to understand but carries a sophisticated feel.";
+    case 'simple_truth':
+      return "The content for each post should highlight a simple but profoundly important truth about life. The tone should be direct, honest, and impactful, focusing on fundamental concepts that everyone can relate to.";
+    case 'provocative_parable':
+      return "The content for each post should be a provocative parable or a sharp, cutting analogy. The tone should be edgy and thought-provoking, designed to challenge the audience's perspective and leave a lasting impression. It should avoid direct advice, instead using powerful comparisons.";
+    case 'insightful_question':
+      return "The content for each post should be a single, powerful, and insightful question that makes people stop and reflect on simple, relatable aspects of their lives. The tone should be curious and introspective, encouraging discussion.";
+    case 'deep_metaphor':
+    default:
+      return "The content for each post should be a profound, thought-provoking statement intended for a wide audience. Embody the following styles:\n- Use deep metaphors (\"kiasan mendalam\") and elegant, simple language.\n- Avoid direct advice. Instead, craft sharp analogies, provocative comparisons, or insightful questions that make people reflect on simple, relatable aspects of life.\n- The tone should be philosophical and memorable.";
+  }
+};
+
+const generatePostIdeas = async (topic, language, style, apiKey) => {
+  if (!apiKey) {
+    throw new Error("API Key is missing. Please provide a valid Google AI API Key.");
+  }
+  const ai = new GoogleGenAI({ apiKey });
+  const styleInstruction = getStyleInstruction(style);
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `Generate 5 creative and distinct social media post ideas for the topic: "${topic}". The platforms should include Instagram, Twitter, Facebook, WhatsApp Status, and TikTok. ${styleInstruction}\nAll content, including hashtags, must be in the following language: ${language}. For each post, provide a platform, engaging content, and relevant hashtags.`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: postSchema,
+        },
+      },
+    });
+    const jsonText = response.text.trim();
+    if (!jsonText) {
+        throw new Error("API returned an empty response for post ideas.");
+    }
+    const parsedResponse = JSON.parse(jsonText);
+    return parsedResponse;
+  } catch (error) {
+    console.error("Error generating post ideas:", error);
+    throw new Error("Failed to generate post ideas from AI. The model may be unavailable or the topic could be too sensitive.");
+  }
+};
+
+const generateImageFromPrompt = async (prompt, apiKey) => {
+  if (!apiKey) {
+    throw new Error("API Key is missing. Please provide a valid Google AI API Key to generate images.");
+  }
+  const ai = new GoogleGenAI({ apiKey });
+  try {
+    const response = await ai.models.generateImages({
+        model: 'imagen-4.0-generate-001',
+        prompt: `Create a visually stunning, high-quality background image for a social media post about: "${prompt}". Abstract and artistic is preferred.`,
+        config: {
+          numberOfImages: 1,
+          outputMimeType: 'image/jpeg',
+          aspectRatio: '1:1',
+        },
+    });
+    if (response.generatedImages && response.generatedImages.length > 0) {
+      const base64ImageBytes = response.generatedImages[0].image.imageBytes;
+      return base64ImageBytes;
+    } else {
+      throw new Error("AI did not return any images.");
+    }
+  } catch (error) {
+    console.error("Error generating image from prompt:", error);
+    throw new Error("Failed to generate image from AI. The model may be unavailable or the prompt could be too sensitive.");
+  }
+};
+
+// --- From components/icons ---
+const ClipboardIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    </svg>
+);
+
+const ImageIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+);
+
+const EyeIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+  </svg>
+);
+
+const EyeOffIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+  </svg>
+);
+
+const TwitterIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/>
+    </svg>
+);
+
+const FacebookIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878V14.89h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+  </svg>
+);
+
+const WhatsAppIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.894 11.892-1.99-.001-3.956-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.886-.001 2.267.655 4.398 1.908 6.161l-1.317 4.814 4.893-1.282zM9.062 8.614c-.099-.197-.678-1.564-1.03-1.833-.353-.269-.734-.27-.882-.27-.148 0-.361 0-.559.099-.196.099-.48.248-.73.595-.249.346-.924 1.161-.924 2.825 0 1.665.952 3.291 1.099 3.518.148.226 1.834 2.959 4.47 3.947 2.633.986 2.633.655 3.109.606.477-.049 1.565-.642 1.783-1.265.219-.623.219-1.161.148-1.265-.07-.104-.248-.153-.522-.299-.274-.147-1.644-.814-1.902-.912-.259-.099-.446-.148-.634.148-.188.297-.718.912-.882 1.099-.164.188-.328.227-.602.079-.273-.148-1.146-.42-2.182-1.346-.811-.715-1.365-1.597-1.513-1.874-.147-.278-.015-.446.133-.595.133-.133.297-.347.446-.522.148-.174.197-.297.297-.495.099-.197.049-.374-.025-.522-.075-.148-.634-1.513-.882-2.079z" />
+  </svg>
+);
+
+const TikTokIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M9 0h1.98c.144.715.54 1.617 1.235 2.512C12.895 3.389 13.797 4 15 4v2c-1.753 0-3.07-.814-4-1.829V11a5 5 0 1 1-5-5v2a3 3 0 1 0 3 3V0Z"/>
+    </svg>
+);
+
+const ShareIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.368a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+    </svg>
+);
+
+
+// --- From components ---
+const Header = ({ t }) => {
+  return (
+    <header className="py-6 border-b border-[#39ff14]/20">
+      <div className="container mx-auto px-4 text-center">
+        <h1 
+          className="text-4xl md:text-5xl font-bold font-orbitron"
+        >
+          <span 
+            className="text-[#39ff14]"
+            style={{ textShadow: '0 0 5px #39ff14, 0 0 10px #39ff14' }}
+          >
+            Li 4 sparking dose
+          </span>
+        </h1>
+        <p className="mt-3 text-gray-400 text-lg tracking-wider">
+          {t('appSlogan')}
+        </p>
+      </div>
+    </header>
+  );
+};
+
+const ApiKeyInput = ({ apiKey, onApiKeyChange, isLoading, t }) => {
+  const [isKeyVisible, setIsKeyVisible] = useState(false);
+  const inputId = 'google-ai-api-key';
+
+  return (
+    <div className="w-full flex flex-col gap-2 items-center">
+      <label 
+        htmlFor={inputId}
+        className="font-orbitron text-gray-300 uppercase tracking-widest text-sm"
+      >
+        {t('apiKeyLabel')}
+      </label>
+      <div className="w-full relative">
+        <input
+          id={inputId}
+          type={isKeyVisible ? 'text' : 'password'}
+          value={apiKey}
+          onChange={(e) => onApiKeyChange(e.target.value)}
+          placeholder={t('apiKeyPlaceholder')}
+          className="w-full bg-black/50 border-2 border-[#39ff14]/50 text-white rounded-md pl-4 pr-36 py-3 focus:ring-2 focus:ring-[#39ff14] focus:border-[#39ff14] focus:outline-none transition duration-200 placeholder-gray-500"
+          disabled={isLoading}
+          aria-label="Google AI API Key"
+        />
+        <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+          <a
+            href="https://aistudio.google.com/app/apikey"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs bg-[#39ff14]/80 text-black font-bold py-1 px-3 rounded-md hover:bg-white transition-all duration-200 uppercase tracking-widest mr-2 flex-shrink-0"
+            aria-label={t('getApiKey') + ' (opens in a new tab)'}
+          >
+            {t('getApiKey')}
+          </a>
+          <button
+            type="button"
+            onClick={() => setIsKeyVisible(!isKeyVisible)}
+            className="p-1 text-gray-400 hover:text-[#39ff14]"
+            aria-label={isKeyVisible ? t('hideApiKey') : t('showApiKey')}
+          >
+            {isKeyVisible ? <EyeOffIcon /> : <EyeIcon />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TopicForm = ({ onGenerate, isLoading, language, onLanguageChange, style, onStyleChange, t }) => {
+  const [topic, setTopic] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onGenerate(topic);
+  };
+  
+  const languages = [
+    { value: 'English', label: 'English' },
+    { value: 'Indonesian', label: 'Indonesian' },
+    { value: 'Spanish', label: 'Spanish' },
+    { value: 'French', label: 'French' },
+    { value: 'German', label: 'German' },
+  ];
+
+  const styles = [
+    { value: 'deep_metaphor', label: t('styleDeepMetaphor') },
+    { value: 'simple_elegant', label: t('styleSimpleElegant') },
+    { value: 'simple_truth', label: t('styleSimpleTruth') },
+    { value: 'provocative_parable', label: t('styleProvocativeParable') },
+    { value: 'insightful_question', label: t('styleInsightfulQuestion') },
+  ];
+
+  return (
+    <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-4 justify-center">
+      <div className="w-full flex flex-col lg:flex-row items-center gap-4">
+        <input
+          type="text"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+          placeholder={t('topicPlaceholder')}
+          className="w-full bg-black/50 border-2 border-[#39ff14]/50 text-white rounded-md px-4 py-3 focus:ring-2 focus:ring-[#39ff14] focus:border-[#39ff14] focus:outline-none transition duration-200 placeholder-gray-500"
+          disabled={isLoading}
+        />
+        <select
+          value={language}
+          onChange={(e) => onLanguageChange(e.target.value)}
+          className="w-full lg:w-48 bg-black/50 border-2 border-[#39ff14]/50 text-white rounded-md px-4 py-3 focus:ring-2 focus:ring-[#39ff14] focus:border-[#39ff14] focus:outline-none transition duration-200"
+          disabled={isLoading}
+        >
+          {languages.map(lang => (
+            <option key={lang.value} value={lang.value} className="bg-gray-900 text-white">{lang.label}</option>
+          ))}
+        </select>
+        <select
+          value={style}
+          onChange={(e) => onStyleChange(e.target.value)}
+          className="w-full lg:w-64 bg-black/50 border-2 border-[#39ff14]/50 text-white rounded-md px-4 py-3 focus:ring-2 focus:ring-[#39ff14] focus:border-[#39ff14] focus:outline-none transition duration-200"
+          disabled={isLoading}
+          aria-label={t('selectWritingStyle')}
+        >
+          {styles.map(s => (
+            <option key={s.value} value={s.value} className="bg-gray-900 text-white">{s.label}</option>
+          ))}
+        </select>
+      </div>
+      <button
+        type="submit"
+        disabled={isLoading || !topic}
+        className="w-full sm:w-auto flex items-center justify-center px-8 py-3 bg-[#39ff14] text-black font-bold rounded-md hover:bg-white disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed transition-all duration-200 uppercase tracking-widest shadow-[0_0_10px_#39ff14] hover:shadow-[0_0_20px_#39ff14]"
+      >
+        {isLoading ? (
+          <>
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {t('processing')}
+          </>
+        ) : (
+          t('generate')
+        )}
+      </button>
+    </form>
+  );
+};
+
+const LoadingSpinner = () => {
+  return (
+    <div className="relative w-20 h-20">
+      <div className="absolute inset-0 border-4 border-dashed rounded-full animate-spin-slow border-[#39ff14]/50"></div>
+      <div className="absolute inset-2 border-4 border-dotted rounded-full animate-spin-medium border-[#39ff14]/70"></div>
+      <div className="absolute inset-4 border-4 border-solid rounded-full animate-spin-fast border-[#39ff14]"></div>
+    </div>
+  );
+};
+
+const ShareButtons = ({ t }) => {
+  const pageUrl = window.location.href;
+  const shareText = "Check out these cool social media post ideas I generated with Li 4 sparking dose!";
+
+  const shareLinks = {
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(shareText)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`,
+    whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + pageUrl)}`,
+    tiktok: `https://www.tiktok.com/`, 
+  };
+
+  const HexagonButton = ({ href, title, children }) => (
+    <a 
+      href={href} 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      className="relative w-12 h-[52px] flex items-center justify-center bg-black/50 text-white hover:text-[#39ff14] transition-colors duration-200 group"
+      title={title}
+      style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
+    >
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200" style={{
+        clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+        boxShadow: 'inset 0 0 10px #39ff14, 0 0 10px #39ff14',
+      }}></div>
+      <div className="relative z-10">
+        {children}
+      </div>
+    </a>
+  );
+
+  return (
+    <div className="my-8 flex flex-col items-center justify-center gap-4 animate-fade-in">
+      <h3 className="text-lg font-orbitron tracking-widest text-gray-300">{t('shareThisAI')}</h3>
+      <div className="flex items-center gap-4">
+        <HexagonButton href={shareLinks.twitter} title={t('shareOnTwitter')}><TwitterIcon /></HexagonButton>
+        <HexagonButton href={shareLinks.facebook} title={t('shareOnFacebook')}><FacebookIcon /></HexagonButton>
+        <HexagonButton href={shareLinks.whatsapp} title={t('shareOnWhatsApp')}><WhatsAppIcon /></HexagonButton>
+        <HexagonButton href={shareLinks.tiktok} title={t('visitTikTok')}><TikTokIcon /></HexagonButton>
+      </div>
+    </div>
+  );
+};
+
+const Advertisement = () => {
+  const [adFailed, setAdFailed] = useState(false);
+  const containerId = 'container-09b1a7bf3170ff8ffcb989e5bed6a1bc';
+  useEffect(() => {
+    const scriptId = 'ad-script-09b1a7';
+    if (document.getElementById(scriptId)) {
+        return;
+    }
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.async = true;
+    script.setAttribute('data-cfasync', 'false');
+    script.src = 'https://niecesprivilegelimelight.com/09b1a7bf3170ff8ffcb989e5bed6a1bc/invoke.js';
+    script.crossOrigin = 'anonymous';
+    script.onerror = () => {
+      console.warn('Advertisement script failed to load. This is often caused by ad blockers and can be safely ignored.');
+      setAdFailed(true);
+    };
+    document.body.appendChild(script);
+    return () => {
+      const adScript = document.getElementById(scriptId);
+      if (adScript) {
+        adScript.remove();
+      }
+    };
+  }, []); 
+
+  if (adFailed) {
+    return null;
+  }
+
+  return (
+    <div 
+      className="my-10 max-w-4xl mx-auto p-1 bg-black/50 backdrop-blur-sm border-2 border-[#39ff14]/50 rounded-lg shadow-lg shadow-[#39ff14]/10 relative transition-all duration-300 hover:border-[#39ff14] animate-fade-in flex justify-center items-center" 
+      style={{ minHeight: '250px' }}
+    >
+      <div id={containerId}></div>
+    </div>
+  );
+};
+
+const ImageEditorModal = ({ post, isOpen, onClose, apiKey, t }) => {
+  const canvasRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [image, setImage] = useState(null);
+  const [aspectRatio, setAspectRatio] = useState('1:1');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [shareStatus, setShareStatus] = useState('idle');
+
+  // Background Controls
+  const [bgOpacity, setBgOpacity] = useState(100);
+  const [bgBlur, setBgBlur] = useState(0);
+
+  // Effects (still used by templates)
+  const [bgFilter, setBgFilter] = useState('none');
+  const [gradientOverlay, setGradientOverlay] = useState('none');
+
+  // Text properties
+  const [text, setText] = useState(post.content);
+  const [textColor, setTextColor] = useState('#FFFFFF');
+  const [fontSize, setFontSize] = useState(48);
+  const [fontFamily, setFontFamily] = useState('Orbitron');
+  const [textYPosition, setTextYPosition] = useState(50); // percentage
+  const [textAlign, setTextAlign] = useState('center');
+
+  // Text outline properties
+  const [textStrokeEnabled, setTextStrokeEnabled] = useState(false);
+  const [textStrokeColor, setTextStrokeColor] = useState('#000000');
+  const [textStrokeWidth, setTextStrokeWidth] = useState(2);
+
+  const [openAccordion, setOpenAccordion] = useState('background');
+  
+  const FONT_FACES = ['Orbitron', 'Roboto', 'Playfair Display', 'Lora', 'Caveat', 'Bebas Neue'];
+  const CANVAS_MAX_WIDTH = 1080;
+
+  const AccordionSection = ({ title, id, isOpen, onToggle, children }) => {
+    return (
+      <div className="border-b border-[#39ff14]/30">
+        <button onClick={() => onToggle(id)} className="w-full flex justify-between items-center py-3 text-left focus:outline-none">
+          <h4 className="text-lg font-semibold text-gray-200 uppercase tracking-wider">{title}</h4>
+          <svg className={`w-5 h-5 text-[#39ff14] transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+        {isOpen && <div className="pb-4 space-y-4 animate-fade-in">{children}</div>}
+      </div>
+    );
+  };
+  
+  const ASPECT_RATIOS = {
+    '1:1': { name: t('aspectSquare'), ratio: 1 / 1 },
+    '4:5': { name: t('aspectPortrait'), ratio: 5 / 4 },
+    '16:9': { name: t('aspectLandscape'), ratio: 9 / 16 },
+    '9:16': { name: t('aspectStory'), ratio: 16 / 9 },
+  };
+
+  const bannerTemplates = [
+    {
+      name: t('templateNeon'),
+      settings: { fontFamily: 'Orbitron', fontSize: 64, textColor: '#39ff14', textStrokeEnabled: true, textStrokeColor: '#000000', textStrokeWidth: 2, gradientOverlay: 'neon-fade', bgFilter: 'none', bgBlur: 2, textAlign: 'center', textYPosition: 50 },
+    },
+    {
+      name: t('templateElegant'),
+      settings: { fontFamily: 'Playfair Display', fontSize: 56, textColor: '#FFFFFF', textStrokeEnabled: true, textStrokeColor: '#000000', textStrokeWidth: 1, gradientOverlay: 'none', bgFilter: 'grayscale', bgBlur: 0, textAlign: 'center', textYPosition: 50 },
+    },
+    {
+      name: t('templateBold'),
+      settings: { fontFamily: 'Bebas Neue', fontSize: 80, textColor: '#FFFFFF', textStrokeEnabled: true, textStrokeColor: '#000000', textStrokeWidth: 4, gradientOverlay: 'none', bgFilter: 'none', bgBlur: 0, textAlign: 'left', textYPosition: 20 },
+    },
+  ];
+
+  const triggerPopUnderAd = () => {
+    const adUrl = 'https://niecesprivilegelimelight.com/h0rgx6ec3?key=7bbd81061fe6c36353d2a52215756a5c';
+    const adWindow = window.open(adUrl, '_blank');
+    if (!adWindow) console.warn('Pop-up ad was blocked by the browser.');
+  };
+
+  const applyTemplate = useCallback((settings) => {
+    setFontFamily(settings.fontFamily);
+    setFontSize(settings.fontSize);
+    setTextColor(settings.textColor);
+    setTextStrokeEnabled(settings.textStrokeEnabled);
+    if (settings.textStrokeColor) setTextStrokeColor(settings.textStrokeColor);
+    if (settings.textStrokeWidth) setTextStrokeWidth(settings.textStrokeWidth);
+    setGradientOverlay(settings.gradientOverlay);
+    setBgFilter(settings.bgFilter);
+    setBgBlur(settings.bgBlur);
+    setTextAlign(settings.textAlign);
+    setTextYPosition(settings.textYPosition);
+  }, []);
+
+  const handleAccordionToggle = (id) => setOpenAccordion(openAccordion === id ? null : id);
+
+  const wrapText = useCallback((context, textToWrap, maxWidth) => {
+    const words = textToWrap.split(' ');
+    const lines = [];
+    let currentLine = words[0];
+    for (let i = 1; i < words.length; i++) {
+        const word = words[i];
+        const width = context.measureText(currentLine + " " + word).width;
+        if (width < maxWidth) {
+            currentLine += " " + word;
+        } else {
+            lines.push(currentLine);
+            currentLine = word;
+        }
+    }
+    lines.push(currentLine);
+    return lines;
+  }, []);
+
+  const redrawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !image) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const ar = ASPECT_RATIOS[aspectRatio].ratio;
+    canvas.width = CANVAS_MAX_WIDTH;
+    canvas.height = CANVAS_MAX_WIDTH * ar;
+    let filterString = '';
+    if (bgBlur > 0) filterString += `blur(${bgBlur}px) `;
+    if (bgFilter === 'grayscale') filterString += 'grayscale(100%) ';
+    if (bgFilter === 'invert') filterString += 'invert(100%) ';
+    if (bgFilter === 'cyberpunk') filterString += 'contrast(1.5) saturate(2) ';
+    ctx.filter = filterString.trim();
+    ctx.globalAlpha = bgOpacity / 100;
+    const imgAspectRatio = image.height / image.width;
+    let sx = 0, sy = 0, sWidth = image.width, sHeight = image.height;
+    if (ar > imgAspectRatio) {
+      sHeight = image.height; sWidth = sHeight / ar; sx = (image.width - sWidth) / 2;
+    } else {
+      sWidth = image.width; sHeight = sWidth * ar; sy = (image.height - sHeight) / 2;
+    }
+    ctx.drawImage(image, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1.0;
+    ctx.filter = 'none';
+    if (bgFilter === 'scanlines') {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        for (let i = 0; i < canvas.height; i += 4) ctx.fillRect(0, i, canvas.width, 2);
+    }
+    if (gradientOverlay !== 'none') {
+        let gradient = null;
+        if (gradientOverlay === 'neon-fade') {
+            gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, 'rgba(57, 255, 20, 0.4)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
+        }
+        if (gradient) { ctx.fillStyle = gradient; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+    } else {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    ctx.fillStyle = textColor;
+    ctx.font = `bold ${fontSize}px '${fontFamily}'`;
+    ctx.textAlign = textAlign;
+    ctx.textBaseline = 'middle';
+    if (textStrokeEnabled) {
+      ctx.strokeStyle = textStrokeColor;
+      ctx.lineWidth = textStrokeWidth * 2;
+      ctx.lineJoin = 'round';
+    }
+    const textX = textAlign === 'center' ? canvas.width / 2 : textAlign === 'left' ? 40 : canvas.width - 40;
+    const maxWidth = canvas.width - 80;
+    const lines = wrapText(ctx, text, maxWidth);
+    const lineHeight = fontSize * 1.2;
+    const totalTextHeight = lines.length * lineHeight;
+    const startY = (canvas.height * (textYPosition / 100)) - (totalTextHeight / 2);
+    lines.forEach((line, index) => {
+      const y = startY + (index * lineHeight) + (lineHeight / 2);
+      if (textStrokeEnabled) ctx.strokeText(line, textX, y);
+      ctx.fillText(line, textX, y);
+    });
+  }, [image, aspectRatio, text, textColor, fontSize, fontFamily, textYPosition, textAlign, wrapText, bgOpacity, bgBlur, bgFilter, gradientOverlay, textStrokeEnabled, textStrokeColor, textStrokeWidth, ASPECT_RATIOS]);
+
+  useEffect(() => { redrawCanvas(); }, [redrawCanvas]);
+  
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => { setImage(img); };
+        img.src = event.target?.result;
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    setIsGenerating(true);
+    try {
+        const prompt = `Social media post about: ${post.content}`;
+        const base64Image = await generateImageFromPrompt(prompt, apiKey);
+        const img = new Image();
+        img.onload = () => { setImage(img); };
+        img.src = `data:image/jpeg;base64,${base64Image}`;
+    } catch (err) {
+        console.error(err);
+        alert(err instanceof Error ? err.message : t('imageGenError'));
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
+  const handleDownload = () => {
+     triggerPopUnderAd();
+     const canvas = canvasRef.current;
+     if (!canvas) return;
+     const link = document.createElement('a');
+     link.download = `sparking-dose-${post.platform.toLowerCase()}.jpg`;
+     link.href = canvas.toDataURL('image/jpeg', 0.9);
+     link.click();
+  };
+
+  const handleShare = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !navigator.share) {
+      alert(t('shareFailMessage'));
+      setShareStatus('failed');
+      setTimeout(() => setShareStatus('idle'), 3000);
+      return;
+    }
+    setShareStatus('sharing');
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        setShareStatus('failed');
+        setTimeout(() => setShareStatus('idle'), 3000);
+        return;
+      }
+      const file = new File([blob], `sparking-dose-${post.platform.toLowerCase()}.jpg`, { type: 'image/jpeg' });
+      const shareData = { files: [file], title: `My ${post.platform} Post Image`, text: post.content };
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        try { await navigator.share(shareData); setShareStatus('idle'); } 
+        catch (err) { console.log("Share action was cancelled or failed:", err); setShareStatus('idle'); }
+      } else {
+        setShareStatus('failed');
+        setTimeout(() => setShareStatus('idle'), 3000);
+      }
+    }, 'image/jpeg', 0.9);
+  };
+  
+  const getShareButtonText = () => {
+    switch(shareStatus) {
+        case 'sharing': return t('sharing');
+        case 'failed': return t('shareFailed');
+        default: return t('share');
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+      <div className="bg-[#0c0c0c] border-2 border-[#39ff14]/50 rounded-lg shadow-2xl shadow-[#39ff14]/10 w-[95vw] lg:w-full max-w-6xl h-[90vh] flex flex-col lg:flex-row overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        {/* Controls */}
+        <div className="w-full lg:w-96 h-1/2 lg:h-auto lg:flex-shrink-0 bg-black/30 lg:border-r-2 border-b-2 lg:border-b-0 border-[#39ff14]/50 p-4 flex flex-col font-orbitron">
+          <h3 className="text-xl font-bold text-[#39ff14] mb-4" style={{ textShadow: '0 0 4px #39ff14' }}>{t('imageEditorTitle')}</h3>
+          
+          <div className="overflow-y-auto flex-grow pr-2">
+            <AccordionSection title={t('background')} id="background" isOpen={openAccordion === 'background'} onToggle={handleAccordionToggle}>
+              <button onClick={() => fileInputRef.current?.click()} className="w-full px-4 py-2 bg-[#39ff14]/80 text-black font-bold rounded-md hover:bg-white transition-all duration-200 uppercase tracking-widest">{t('uploadImage')}</button>
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
+              <button
+                onClick={handleGenerateImage}
+                disabled={!apiKey || isGenerating}
+                title={!apiKey ? t('apiKeyTooltip') : t('generateTooltip')}
+                className="w-full relative mt-2 px-4 py-2 flex items-center justify-center bg-transparent border-2 border-[#39ff14]/50 text-[#39ff14] font-bold rounded-md transition-all duration-200 uppercase tracking-widest enabled:hover:bg-[#39ff14]/20 enabled:hover:border-[#39ff14] disabled:text-gray-600 disabled:border-gray-600 disabled:cursor-not-allowed"
+              >
+                 {isGenerating ? (
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" /></svg>
+                )}
+                {isGenerating ? t('generating') : t('generateWithAI')}
+              </button>
+              
+              {image && <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1 uppercase tracking-wider">{t('aspectRatio')}</label>
+                  <select value={aspectRatio} onChange={e => setAspectRatio(e.target.value)} className="w-full bg-black/50 border-2 border-[#39ff14]/50 text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-[#39ff14] focus:outline-none"><option value="" disabled>Select</option>{Object.entries(ASPECT_RATIOS).map(([k,v])=><option key={k} value={k} className="bg-gray-900">{v.name}</option>)}</select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1 uppercase tracking-wider">{t('opacity')}: {bgOpacity}%</label>
+                  <input type="range" min="0" max="100" value={bgOpacity} onChange={e => setBgOpacity(Number(e.target.value))} className="w-full h-2 bg-black/50 border border-[#39ff14]/50 rounded-lg appearance-none cursor-pointer range-thumb" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1 uppercase tracking-wider">{t('blur')}: {bgBlur}px</label>
+                  <input type="range" min="0" max="20" value={bgBlur} onChange={e => setBgBlur(Number(e.target.value))} className="w-full h-2 bg-black/50 border border-[#39ff14]/50 rounded-lg appearance-none cursor-pointer range-thumb" />
+                </div>
+              </>}
+            </AccordionSection>
+
+            {image && <>
+            <AccordionSection title={t('bannerTemplates')} id="templates" isOpen={openAccordion === 'templates'} onToggle={handleAccordionToggle}>
+              <div className="grid grid-cols-1 gap-2">
+                {bannerTemplates.map(template => (
+                  <button
+                    key={template.name}
+                    onClick={() => applyTemplate(template.settings)}
+                    className="w-full p-3 border-2 border-[#39ff14]/50 rounded-md text-left transition-all hover:bg-[#39ff14]/20 hover:border-[#39ff14] focus:outline-none focus:ring-2 focus:ring-[#39ff14]"
+                  >
+                    <span 
+                      className="font-bold text-lg tracking-wider"
+                      style={{
+                        fontFamily: `'${template.settings.fontFamily}', sans-serif`,
+                        color: template.settings.textColor,
+                        WebkitTextStroke: template.settings.textStrokeEnabled ? `${template.settings.textStrokeWidth / 2}px ${template.settings.textStrokeColor}` : 'none',
+                        paintOrder: 'stroke fill',
+                      }}
+                    >
+                      {template.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </AccordionSection>
+
+            <AccordionSection title={t('text')} id="text" isOpen={openAccordion === 'text'} onToggle={handleAccordionToggle}>
+              <textarea value={text} onChange={(e) => setText(e.target.value)} rows={4} className="w-full bg-black/50 border-2 border-[#39ff14]/50 text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-[#39ff14] focus:outline-none font-sans"></textarea>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1 uppercase tracking-wider">{t('fontFamily')}</label>
+                  <select value={fontFamily} onChange={e => setFontFamily(e.target.value)} className="w-full bg-black/50 border-2 border-[#39ff14]/50 text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-[#39ff14] focus:outline-none font-sans">
+                      {FONT_FACES.map(font => (
+                          <option key={font} value={font} className="bg-gray-900" style={{ fontFamily: `'${font}', sans-serif` }}>{font}</option>
+                      ))}
+                  </select>
+                </div>
+                <div className="flex items-end">
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="textColor" className="text-sm font-medium text-gray-300 uppercase tracking-wider">{t('color')}</label>
+                        <input id="textColor" type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-10 h-10 rounded-md border-2 border-[#39ff14]/50 bg-black/50 cursor-pointer" />
+                    </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1 uppercase tracking-wider">{t('fontSize')}: {fontSize}px</label>
+                <input type="range" min="16" max="128" value={fontSize} onChange={e => setFontSize(Number(e.target.value))} className="w-full h-2 bg-black/50 border border-[#39ff14]/50 rounded-lg appearance-none cursor-pointer range-thumb" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1 uppercase tracking-wider">{t('vPosition')}: {textYPosition}%</label>
+                <input type="range" min="0" max="100" value={textYPosition} onChange={e => setTextYPosition(Number(e.target.value))} className="w-full h-2 bg-black/50 border border-[#39ff14]/50 rounded-lg appearance-none cursor-pointer range-thumb" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1 uppercase tracking-wider">{t('alignment')}</label>
+                <div className="flex gap-2">
+                  {['left', 'center', 'right'].map(align => (<button key={align} onClick={() => setTextAlign(align)} className={`px-4 py-2 text-sm rounded-md border-2 uppercase transition-colors ${textAlign === align ? 'bg-[#39ff14] text-black border-[#39ff14]' : 'bg-black/50 border-[#39ff14]/50 hover:bg-[#39ff14]/20'}`}>{align}</button>))}
+                </div>
+              </div>
+              <div className="border-t border-[#39ff14]/30 mt-4 pt-4 space-y-2">
+                <div className="flex justify-between items-center">
+                    <h5 className="text-md font-semibold text-gray-200 uppercase tracking-wider">{t('outline')}</h5>
+                    <label htmlFor="strokeToggle" className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="strokeToggle" className="sr-only peer" checked={textStrokeEnabled} onChange={() => setTextStrokeEnabled(!textStrokeEnabled)} />
+                        <div className="w-11 h-6 bg-black/50 border border-[#39ff14]/50 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#39ff14]"></div>
+                    </label>
+                </div>
+                {textStrokeEnabled && <div className="space-y-4 animate-fade-in">
+                    <div className="flex items-center gap-4">
+                        <label htmlFor="textStrokeColor" className="text-sm font-medium text-gray-300 uppercase tracking-wider">{t('color')}</label>
+                        <input id="textStrokeColor" type="color" value={textStrokeColor} onChange={e => setTextStrokeColor(e.target.value)} className="w-10 h-10 rounded-md border-2 border-[#39ff14]/50 bg-black/50 cursor-pointer" />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1 uppercase tracking-wider">{t('width')}: {textStrokeWidth}px</label>
+                        <input type="range" min="1" max="10" value={textStrokeWidth} onChange={e => setTextStrokeWidth(Number(e.target.value))} className="w-full h-2 bg-black/50 border border-[#39ff14]/50 rounded-lg appearance-none cursor-pointer range-thumb" />
+                    </div>
+                </div>}
+              </div>
+            </AccordionSection>
+            </>}
+          </div>
+
+          {image && (
+            <div className="pt-4 mt-auto border-t-2 border-[#39ff14]/50 flex items-center gap-2">
+              <button 
+                onClick={handleDownload} 
+                className="flex-1 px-4 py-3 bg-green-500 text-black font-bold rounded-md hover:bg-green-400 transition-all duration-200 uppercase tracking-widest shadow-[0_0_10px_#39ff14] hover:shadow-[0_0_20px_#39ff14] flex items-center justify-center gap-2"
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 9.707a1 1 0 011.414 0L9 11.293V3a1 1 0 112 0v8.293l1.293-1.586a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                  {t('download')}
+              </button>
+              {navigator.share && (
+                <button 
+                  onClick={handleShare} 
+                  disabled={shareStatus !== 'idle'}
+                  title={shareStatus === 'failed' ? t('shareFailMessage') : t('share')}
+                  className={`flex-1 px-4 py-3 font-bold rounded-md transition-all duration-200 uppercase tracking-widest flex items-center justify-center gap-2
+                    ${shareStatus === 'failed' ? 'bg-red-900/50 border-2 border-red-500 text-red-400 cursor-not-allowed' :
+                    'bg-transparent border-2 border-green-500 text-green-500 hover:bg-green-500/20 disabled:border-gray-600 disabled:text-gray-600 disabled:cursor-not-allowed'
+                    }`
+                  }
+                >
+                    <ShareIcon />
+                    {getShareButtonText()}
+                </button>
+              )}
+            </div>
+          )}
+
+        </div>
+        {/* Canvas */}
+        <div className="flex-1 bg-black/80 flex items-center justify-center p-2 lg:p-4 min-h-0">
+          {image ? (
+            <canvas ref={canvasRef} className="max-w-full max-h-full object-contain rounded-md"></canvas>
+          ) : (
+            <div 
+              className="w-full h-full border-2 border-dashed border-[#39ff14]/50 rounded-lg flex flex-col items-center justify-center text-gray-400 cursor-pointer hover:bg-[#39ff14]/10 hover:border-[#39ff14] transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-[#39ff14]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              <p className="mt-4 text-lg font-semibold font-orbitron text-[#39ff14]">{t('uploadPlaceholderTitle')}</p>
+              <p className="text-sm text-gray-500">{t('uploadPlaceholderSubtitle')}</p>
+            </div>
+          )}
+        </div>
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white hover:text-[#39ff14] transition-colors z-10">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const PostCard = ({ post, apiKey, t }) => {
+  const [isCopied, setIsCopied] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+
+  const fullPostText = `${post.content}\n\n${post.hashtags.map(tag => `#${tag}`).join(' ')}`;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(fullPostText);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000); 
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+      alert(t('copyFail'));
+    }
+  };
+
+  return (
+    <>
+      <div className="bg-black/50 backdrop-blur-sm border border-[#39ff14]/30 rounded-lg overflow-hidden shadow-lg transition-all duration-300 hover:shadow-[#39ff14]/20 hover:border-[#39ff14]/80 animate-fade-in flex flex-col h-full">
+        <div className="p-5 flex-grow flex flex-col">
+          <p className="text-gray-300 leading-relaxed whitespace-pre-wrap flex-grow">{post.content}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {post.hashtags.map((tag, i) => (
+              <span key={i} className="text-xs bg-[#39ff14]/10 text-[#39ff14] px-2 py-1 rounded-md font-mono">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="p-2 bg-black/20 border-t border-[#39ff14]/30 flex items-center justify-center gap-2 mt-auto">
+          <button
+            onClick={handleCopy}
+            className="w-full flex items-center justify-center gap-2 text-sm bg-transparent hover:bg-[#39ff14]/10 border-2 border-[#39ff14]/50 hover:border-[#39ff14] text-[#39ff14] font-bold py-2 px-4 rounded-md transition-all duration-200 disabled:opacity-50 disabled:hover:bg-transparent"
+            disabled={isCopied}
+          >
+            <ClipboardIcon />
+            {isCopied ? t('copied') : t('copy')}
+          </button>
+          <button
+            onClick={() => setIsEditorOpen(true)}
+            className="w-full flex items-center justify-center gap-2 text-sm bg-[#39ff14]/80 hover:bg-[#39ff14] text-black font-bold py-2 px-4 rounded-md transition-all duration-200"
+          >
+            <ImageIcon />
+            {t('createImage')}
+          </button>
+        </div>
+      </div>
+      {isEditorOpen && (
+        <ImageEditorModal 
+          post={post}
+          isOpen={isEditorOpen}
+          onClose={() => setIsEditorOpen(false)}
+          apiKey={apiKey}
+          t={t}
+        />
+      )}
+    </>
+  );
+};
+
+// --- App.tsx ---
+const App = () => {
+  const [posts, setPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [language, setLanguage] = useState('English');
+  const [style, setStyle] = useState('deep_metaphor');
+  const [apiKey, setApiKey] = useState('');
+  const t = useTranslations(language);
+
+  const handleGenerate = useCallback(async (topic) => {
+    if (!apiKey) {
+      setError(t('apiKeyError'));
+      return;
+    }
+    if (!topic) {
+      setError(t('topicError'));
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    setPosts([]);
+
+    try {
+      const postIdeas = await generatePostIdeas(topic, language, style, apiKey);
+      setPosts(postIdeas);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : t('unexpectedError'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [language, style, apiKey, t]);
+
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] text-gray-200 font-sans">
+      <div 
+        className="absolute inset-0 -z-10 h-full w-full"
+        style={{
+          backgroundColor: '#0a0a0a',
+          backgroundImage: 'linear-gradient(to right, rgba(57, 255, 20, 0.1) 1px, transparent 1px), linear-gradient(to bottom, rgba(57, 255, 20, 0.1) 1px, transparent 1px)',
+          backgroundSize: '30px 30px'
+        }}
+      >
+        <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[400px] w-[400px] rounded-full bg-[#39ff14] opacity-20 blur-[120px]"></div>
+      </div>
+      
+      <Header t={t} />
+      
+      <main className="container mx-auto px-4 py-8">
+        <section className="text-center max-w-3xl mx-auto">
+          <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+            {t('appDescription')}
+          </p>
+          <div className="flex flex-col items-center gap-4 justify-center">
+            <ApiKeyInput
+              apiKey={apiKey}
+              onApiKeyChange={setApiKey}
+              isLoading={isLoading}
+              t={t}
+            />
+            <TopicForm 
+              onGenerate={handleGenerate} 
+              isLoading={isLoading}
+              language={language}
+              onLanguageChange={(lang) => setLanguage(lang)}
+              style={style}
+              onStyleChange={setStyle}
+              t={t}
+            />
+          </div>
+        </section>
+
+        {error && (
+          <div className="text-center my-8 bg-red-900/50 border border-red-500/50 text-red-300 px-4 py-3 rounded-md max-w-2xl mx-auto font-orbitron">
+            <p><strong>{t('systemError')}</strong> {error}</p>
+          </div>
+        )}
+
+        <Advertisement />
+
+        <section className="mt-12">
+          {isLoading && posts.length === 0 && (
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <LoadingSpinner />
+              <p className="text-[#39ff14] font-orbitron tracking-widest">{t('generatingPosts')}</p>
+            </div>
+          )}
+          {posts.length > 0 && (
+            <>
+              <ShareButtons t={t} />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {posts.map((post, index) => (
+                  <PostCard key={index} post={post} apiKey={apiKey} t={t} />
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+      </main>
+    </div>
+  );
+};
+
+
+// --- index.tsx (entry point) ---
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
+}
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+// --- End of combined script ---
+    </script>
   </body>
 </html>
